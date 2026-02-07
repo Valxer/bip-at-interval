@@ -1,5 +1,4 @@
 import { signal, Signal, WritableSignal } from '@angular/core';
-import { AudioRequest } from '../../core/models/audio-config';
 
 export interface LoopState {
   isPlaying: boolean;
@@ -10,6 +9,7 @@ export interface LoopState {
 }
 export class HomeViewModel {
   private readonly STORAGE_KEY = 'audio_loop_settings';
+  private readonly DEFAULT_SOUND_PATH = 'assets/sounds/open-map.mp3'
 
   private readonly _state: WritableSignal<LoopState> = signal({
     isPlaying: false,
@@ -27,22 +27,46 @@ export class HomeViewModel {
 
   constructor() {
     this.#loadSettings();
-    this._audioElement.volume = this._state().volume;
+    this.#initDefaultSound();
   }
 
-  public startLoop(file: File, intervalSeconds: number): void {
-    this.#clearTimers();
-    this.#setupAudio(file);
+  #initDefaultSound(): void {
+    this._audioElement.src = this.DEFAULT_SOUND_PATH;
+    this._audioElement.load();
+    this._audioElement.volume = this._state().volume;
     
+    this._state.update(s => ({ 
+      ...s, 
+      fileName: '🔔 Son par défaut' 
+    }));
+  }
+
+  public startLoop(file: File | null, intervalSeconds: number): void {
+    this.#clearTimers();
+    
+    if (file) {
+      this.#setupAudioFromFile(file);
+    } else {
+      if (!this._audioElement.src.includes(this.DEFAULT_SOUND_PATH)) {
+        this._audioElement.src = this.DEFAULT_SOUND_PATH;
+      }
+    }
+
     this._state.update(s => ({ 
       ...s, 
       isPlaying: true, 
       intervalTotal: intervalSeconds,
       secondsRemaining: intervalSeconds,
-      fileName: file.name 
+      fileName: file ? file.name : '🔔 Son par défaut'
     }));
 
+    this.#saveSettings();
     this.#executeCycle();
+  }
+
+  #setupAudioFromFile(file: File): void {
+    this._audioElement.src = URL.createObjectURL(file);
+    this._audioElement.load();
   }
 
   public stop(): void {

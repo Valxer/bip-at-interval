@@ -42,9 +42,9 @@ export class HomeComponent {
   }
 
   start(seconds: string): void {
-    const sec = parseFloat(seconds);
-    if (this.selectedFile && sec > 0) {
-      this.vm.startLoop(this.selectedFile, sec);
-    }
+  const sec = parseFloat(seconds);
+  if (sec > 0) {
+    this.vm.startLoop(this.selectedFile, sec);
   }
+}
 }
